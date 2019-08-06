@@ -39,7 +39,7 @@ void SX126xIoInit( void )
 {
     GpioInit( &SX126x.Spi.Nss, RADIO_NSS, PIN_OUTPUT, PIN_PUSH_PULL, PIN_PULL_UP, 1 );
     GpioInit( &SX126x.BUSY, RADIO_BUSY, PIN_INPUT, PIN_PUSH_PULL, PIN_NO_PULL, 0 );
-    GpioInit( &SX126x.DIO1, RADIO_DIO_1, PIN_INPUT, PIN_PUSH_PULL, PIN_NO_PULL, 0 ); 
+    GpioInit( &SX126x.DIO1, RADIO_DIO_1, PIN_INPUT, PIN_PUSH_PULL, PIN_NO_PULL, 0 );
     SX126xIoIrqInit(RadioOnDioIrq);
 }
 
@@ -52,7 +52,7 @@ void SX126xIoDeInit( void )
 {
     GpioInit( &SX126x.Spi.Nss, RADIO_NSS, PIN_OUTPUT, PIN_PUSH_PULL, PIN_PULL_UP, 1 );
     GpioInit( &SX126x.BUSY, RADIO_BUSY, PIN_INPUT, PIN_PUSH_PULL, PIN_PULL_UP, 1 );
-    GpioInit( &SX126x.DIO1, RADIO_DIO_1, PIN_OUTPUT, PIN_PUSH_PULL, PIN_NO_PULL, 0 );   
+    GpioInit( &SX126x.DIO1, RADIO_DIO_1, PIN_OUTPUT, PIN_PUSH_PULL, PIN_NO_PULL, 0 );
 }
 
 uint32_t SX126xGetBoardTcxoWakeupTime( void )
@@ -95,6 +95,13 @@ void SX126xWriteCommand( RadioCommands_t command, uint8_t *buffer, uint16_t size
 {
     uint16_t i;
     SX126xCheckDeviceReady( );
+#ifdef USE_REJEEE_AR605
+    if(command == RADIO_SET_TX ||
+       command == RADIO_SET_TXCONTINUOUSWAVE ||
+       command == RADIO_SET_TXCONTINUOUSPREAMBLE){
+        SX126xAntSwOff();
+    }
+#endif
 
     GpioWrite( &SX126x.Spi.Nss, 0 );
 
@@ -137,11 +144,11 @@ void SX126xWriteRegisters( uint16_t address, uint8_t *buffer, uint16_t size )
     SX126xCheckDeviceReady( );
 
     GpioWrite( &SX126x.Spi.Nss, 0 );
-    
+
     SpiInOut( &SX126x.Spi, RADIO_WRITE_REGISTER );
     SpiInOut( &SX126x.Spi, ( address & 0xFF00 ) >> 8 );
     SpiInOut( &SX126x.Spi, address & 0x00FF );
-    
+
     for( i = 0; i < size; i++ )
     {
         SpiInOut( &SX126x.Spi, buffer[i] );
@@ -255,6 +262,6 @@ uint8_t SX126xGetPaOpt( )
 void SX126xSetPaOpt( uint8_t opt )
 {
     if(opt>3) return;
-    
+
     gPaOptSetting = opt;
 }
